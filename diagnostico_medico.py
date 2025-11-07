@@ -4,8 +4,520 @@ Proyecto de Fundamentos de Programación
 Autor: Estudiante
 """
 
-def main():
+import os
+from datetime import datetime
+
+# ==================== FUNCIONES DE PERSISTENCIA ====================
+
+def cargar_pacientes():
+    """Carga los pacientes desde el archivo pacientes.txt"""
+    pacientes = {}
+    if os.path.exists("pacientes.txt"):
+        try:
+            with open("pacientes.txt", "r", encoding="utf-8") as archivo:
+                for linea in archivo:
+                    linea = linea.strip()
+                    if linea:
+                        datos = linea.split("|")
+                        if len(datos) == 6:
+                            num_id = datos[0]
+                            pacientes[num_id] = {
+                                "nombre_completo": datos[1],
+                                "fecha_nacimiento": datos[2],
+                                "genero": datos[3],
+                                "celular_contacto": datos[4],
+                                "fecha_registro": datos[5]
+                            }
+        except Exception as e:
+            print(f"Error al cargar pacientes: {e}")
+    return pacientes
+
+
+def guardar_pacientes(pacientes):
+    """Guarda los pacientes en el archivo pacientes.txt"""
+    try:
+        with open("pacientes.txt", "w", encoding="utf-8") as archivo:
+            for num_id, datos in pacientes.items():
+                linea = f"{num_id}|{datos['nombre_completo']}|{datos['fecha_nacimiento']}|{datos['genero']}|{datos['celular_contacto']}|{datos['fecha_registro']}\n"
+                archivo.write(linea)
+    except Exception as e:
+        print(f"Error al guardar pacientes: {e}")
+
+
+def cargar_historial_medico():
+    """Carga el historial médico desde historial_medico.txt"""
+    historial = {}
+    if os.path.exists("historial_medico.txt"):
+        try:
+            with open("historial_medico.txt", "r", encoding="utf-8") as archivo:
+                for linea in archivo:
+                    linea = linea.strip()
+                    if linea:
+                        datos = linea.split("|")
+                        if len(datos) >= 3:
+                            num_id = datos[0]
+                            tipo = datos[1]  # enfermedad, tratamiento, alergia
+                            
+                            if num_id not in historial:
+                                historial[num_id] = {
+                                    "enfermedades": [],
+                                    "tratamientos": [],
+                                    "alergias": []
+                                }
+                            
+                            if tipo == "enfermedad" and len(datos) == 5:
+                                historial[num_id]["enfermedades"].append({
+                                    "sintomas": datos[2],
+                                    "nombre_enfermedad": datos[3],
+                                    "fecha_registro": datos[4]
+                                })
+                            elif tipo == "tratamiento" and len(datos) == 5:
+                                historial[num_id]["tratamientos"].append({
+                                    "medicamentos": datos[2],
+                                    "dosis": datos[3],
+                                    "fecha_registro": datos[4]
+                                })
+                            elif tipo == "alergia" and len(datos) == 5:
+                                historial[num_id]["alergias"].append({
+                                    "alergeno": datos[2],
+                                    "sintomas": datos[3],
+                                    "fecha_registro": datos[4]
+                                })
+        except Exception as e:
+            print(f"Error al cargar historial médico: {e}")
+    return historial
+
+
+def guardar_historial_medico(historial):
+    """Guarda el historial médico en historial_medico.txt"""
+    try:
+        with open("historial_medico.txt", "w", encoding="utf-8") as archivo:
+            for num_id, datos in historial.items():
+                # Guardar enfermedades
+                for enfermedad in datos.get("enfermedades", []):
+                    linea = f"{num_id}|enfermedad|{enfermedad['sintomas']}|{enfermedad['nombre_enfermedad']}|{enfermedad['fecha_registro']}\n"
+                    archivo.write(linea)
+                
+                # Guardar tratamientos
+                for tratamiento in datos.get("tratamientos", []):
+                    linea = f"{num_id}|tratamiento|{tratamiento['medicamentos']}|{tratamiento['dosis']}|{tratamiento['fecha_registro']}\n"
+                    archivo.write(linea)
+                
+                # Guardar alergias
+                for alergia in datos.get("alergias", []):
+                    linea = f"{num_id}|alergia|{alergia['alergeno']}|{alergia['sintomas']}|{alergia['fecha_registro']}\n"
+                    archivo.write(linea)
+    except Exception as e:
+        print(f"Error al guardar historial médico: {e}")
+
+
+# ==================== FUNCIONES DE GESTIÓN DE PACIENTES ====================
+
+def agregar_paciente(pacientes):
+    """Menú 2: Agregar un nuevo paciente"""
+    print("\n" + "=" * 60)
+    print("    AGREGAR NUEVO PACIENTE")
     print("=" * 60)
+    
+    # Solicitar número de identificación
+    while True:
+        num_id = input("\nNúmero de identificación: ").strip()
+        if not num_id:
+            print("❌ El número de identificación no puede estar vacío.")
+            continue
+        if num_id in pacientes:
+            print("❌ Ya existe un paciente con este número de identificación.")
+            continue
+        break
+    
+    # Solicitar nombre completo
+    while True:
+        nombre = input("Nombre completo: ").strip()
+        if not nombre:
+            print("❌ El nombre no puede estar vacío.")
+            continue
+        if len(nombre) < 3:
+            print("❌ El nombre debe tener al menos 3 caracteres.")
+            continue
+        break
+    
+    # Solicitar fecha de nacimiento
+    while True:
+        fecha_nac = input("Fecha de nacimiento (DD/MM/AAAA): ").strip()
+        if not fecha_nac:
+            print("❌ La fecha de nacimiento no puede estar vacía.")
+            continue
+        # Validación básica de formato
+        if len(fecha_nac.split("/")) != 3:
+            print("❌ Formato incorrecto. Usa DD/MM/AAAA")
+            continue
+        break
+    
+    # Solicitar género
+    while True:
+        genero = input("Género (M/F/Otro): ").strip().upper()
+        if genero not in ["M", "F", "OTRO"]:
+            print("❌ Género inválido. Usa M, F o Otro.")
+            continue
+        break
+    
+    # Solicitar celular de contacto
+    while True:
+        celular = input("Celular de contacto: ").strip()
+        if not celular:
+            print("❌ El celular no puede estar vacío.")
+            continue
+        break
+    
+    # Fecha de registro automática
+    fecha_registro = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    # Agregar paciente
+    pacientes[num_id] = {
+        "nombre_completo": nombre,
+        "fecha_nacimiento": fecha_nac,
+        "genero": genero,
+        "celular_contacto": celular,
+        "fecha_registro": fecha_registro
+    }
+    
+    guardar_pacientes(pacientes)
+    
+    print("\n✅ Paciente agregado exitosamente!")
+    print(f"   ID: {num_id}")
+    print(f"   Nombre: {nombre}")
+    print(f"   Fecha de registro: {fecha_registro}")
+
+
+def editar_paciente(pacientes):
+    """Menú 3: Editar información de un paciente"""
+    print("\n" + "=" * 60)
+    print("    EDITAR PACIENTE")
+    print("=" * 60)
+    
+    busqueda = input("\nIngresa el número de identificación o nombre del paciente: ").strip()
+    
+    # Buscar paciente
+    paciente_encontrado = None
+    num_id_encontrado = None
+    
+    # Buscar por número de identificación
+    if busqueda in pacientes:
+        paciente_encontrado = pacientes[busqueda]
+        num_id_encontrado = busqueda
+    else:
+        # Buscar por nombre
+        for num_id, datos in pacientes.items():
+            if busqueda.lower() in datos["nombre_completo"].lower():
+                paciente_encontrado = datos
+                num_id_encontrado = num_id
+                break
+    
+    if not paciente_encontrado:
+        print("❌ No se encontró ningún paciente con esa información.")
+        return
+    
+    # Mostrar información actual
+    print("\n📋 Información actual del paciente:")
+    print(f"   ID: {num_id_encontrado}")
+    print(f"   1. Nombre: {paciente_encontrado['nombre_completo']}")
+    print(f"   2. Fecha de nacimiento: {paciente_encontrado['fecha_nacimiento']}")
+    print(f"   3. Género: {paciente_encontrado['genero']}")
+    print(f"   4. Celular: {paciente_encontrado['celular_contacto']}")
+    print(f"   Fecha de registro: {paciente_encontrado['fecha_registro']}")
+    
+    # Menú de edición
+    print("\n¿Qué deseas editar?")
+    print("1. Nombre completo")
+    print("2. Fecha de nacimiento")
+    print("3. Género")
+    print("4. Celular de contacto")
+    print("5. Editar todo")
+    print("0. Cancelar")
+    
+    opcion = input("\nSelecciona una opción: ").strip()
+    
+    if opcion == "1":
+        nuevo_valor = input("Nuevo nombre completo: ").strip()
+        if nuevo_valor:
+            paciente_encontrado["nombre_completo"] = nuevo_valor
+            print("✅ Nombre actualizado.")
+    elif opcion == "2":
+        nuevo_valor = input("Nueva fecha de nacimiento (DD/MM/AAAA): ").strip()
+        if nuevo_valor:
+            paciente_encontrado["fecha_nacimiento"] = nuevo_valor
+            print("✅ Fecha de nacimiento actualizada.")
+    elif opcion == "3":
+        nuevo_valor = input("Nuevo género (M/F/Otro): ").strip().upper()
+        if nuevo_valor in ["M", "F", "OTRO"]:
+            paciente_encontrado["genero"] = nuevo_valor
+            print("✅ Género actualizado.")
+    elif opcion == "4":
+        nuevo_valor = input("Nuevo celular de contacto: ").strip()
+        if nuevo_valor:
+            paciente_encontrado["celular_contacto"] = nuevo_valor
+            print("✅ Celular actualizado.")
+    elif opcion == "5":
+        nombre = input("Nombre completo: ").strip()
+        fecha_nac = input("Fecha de nacimiento (DD/MM/AAAA): ").strip()
+        genero = input("Género (M/F/Otro): ").strip().upper()
+        celular = input("Celular de contacto: ").strip()
+        
+        if nombre:
+            paciente_encontrado["nombre_completo"] = nombre
+        if fecha_nac:
+            paciente_encontrado["fecha_nacimiento"] = fecha_nac
+        if genero in ["M", "F", "OTRO"]:
+            paciente_encontrado["genero"] = genero
+        if celular:
+            paciente_encontrado["celular_contacto"] = celular
+        
+        print("✅ Información actualizada.")
+    elif opcion == "0":
+        print("Operación cancelada.")
+        return
+    else:
+        print("❌ Opción inválida.")
+        return
+    
+    pacientes[num_id_encontrado] = paciente_encontrado
+    guardar_pacientes(pacientes)
+
+
+def buscar_paciente(pacientes, busqueda):
+    """Busca un paciente por ID o nombre"""
+    # Buscar por número de identificación
+    if busqueda in pacientes:
+        return busqueda, pacientes[busqueda]
+    
+    # Buscar por nombre
+    for num_id, datos in pacientes.items():
+        if busqueda.lower() in datos["nombre_completo"].lower():
+            return num_id, datos
+    
+    return None, None
+
+
+def consultar_paciente(pacientes, historial):
+    """Menú 4: Consultar información de un paciente y gestionar historial"""
+    print("\n" + "=" * 60)
+    print("    CONSULTAR PACIENTE")
+    print("=" * 60)
+    
+    busqueda = input("\nIngresa el número de identificación o nombre del paciente: ").strip()
+    
+    num_id, paciente = buscar_paciente(pacientes, busqueda)
+    
+    if not paciente:
+        print("❌ No se encontró ningún paciente con esa información.")
+        return
+    
+    # Mostrar información del paciente
+    print("\n" + "=" * 60)
+    print("📋 INFORMACIÓN DEL PACIENTE")
+    print("=" * 60)
+    print(f"ID: {num_id}")
+    print(f"Nombre: {paciente['nombre_completo']}")
+    print(f"Fecha de nacimiento: {paciente['fecha_nacimiento']}")
+    print(f"Género: {paciente['genero']}")
+    print(f"Celular: {paciente['celular_contacto']}")
+    print(f"Fecha de registro: {paciente['fecha_registro']}")
+    
+    # Mostrar historial médico
+    print("\n" + "=" * 60)
+    print("📋 HISTORIAL MÉDICO")
+    print("=" * 60)
+    
+    if num_id in historial:
+        # Enfermedades
+        if historial[num_id].get("enfermedades"):
+            print("\n🦠 ENFERMEDADES:")
+            for i, enf in enumerate(historial[num_id]["enfermedades"], 1):
+                print(f"   {i}. {enf['nombre_enfermedad']}")
+                print(f"      Síntomas: {enf['sintomas']}")
+                print(f"      Fecha: {enf['fecha_registro']}")
+        else:
+            print("\n🦠 ENFERMEDADES: Ninguna registrada")
+        
+        # Tratamientos
+        if historial[num_id].get("tratamientos"):
+            print("\n💊 TRATAMIENTOS:")
+            for i, trat in enumerate(historial[num_id]["tratamientos"], 1):
+                print(f"   {i}. Medicamentos: {trat['medicamentos']}")
+                print(f"      Dosis: {trat['dosis']}")
+                print(f"      Fecha: {trat['fecha_registro']}")
+        else:
+            print("\n💊 TRATAMIENTOS: Ninguno registrado")
+        
+        # Alergias
+        if historial[num_id].get("alergias"):
+            print("\n⚠️  ALERGIAS:")
+            for i, aler in enumerate(historial[num_id]["alergias"], 1):
+                print(f"   {i}. Alérgeno: {aler['alergeno']}")
+                print(f"      Síntomas: {aler['sintomas']}")
+                print(f"      Fecha: {aler['fecha_registro']}")
+        else:
+            print("\n⚠️  ALERGIAS: Ninguna registrada")
+    else:
+        print("\nNo hay historial médico registrado para este paciente.")
+    
+    # Submenú para gestionar historial
+    while True:
+        print("\n" + "=" * 60)
+        print("¿Qué deseas hacer?")
+        print("5. Agregar una enfermedad")
+        print("6. Agregar un tratamiento")
+        print("7. Agregar una alergia")
+        print("0. Volver al menú principal")
+        
+        opcion = input("\nSelecciona una opción: ").strip()
+        
+        if opcion == "5":
+            agregar_enfermedad(num_id, historial)
+        elif opcion == "6":
+            agregar_tratamiento(num_id, historial)
+        elif opcion == "7":
+            agregar_alergia(num_id, historial)
+        elif opcion == "0":
+            break
+        else:
+            print("❌ Opción inválida.")
+
+
+# ==================== FUNCIONES DE HISTORIAL MÉDICO ====================
+
+def agregar_enfermedad(num_id, historial):
+    """Menú 5: Agregar una enfermedad usando el sistema de diagnóstico"""
+    print("\n" + "=" * 60)
+    print("    AGREGAR ENFERMEDAD")
+    print("=" * 60)
+    print("\nEl sistema diagnosticará la enfermedad basándose en los síntomas.")
+    print()
+    
+    # Solicitar los tres síntomas (igual que en el sistema original)
+    sintomas = []
+    
+    for i in range(1, 4):
+        while True:
+            sintoma = input(f"Ingresa el síntoma #{i}: ").strip()
+            
+            if sintoma == "":
+                print("❌ Error: Debes ingresar un síntoma. No puede estar vacío.")
+                continue
+            
+            if len(sintoma) < 2:
+                print("❌ Error: El síntoma debe tener al menos 2 caracteres.")
+                continue
+            
+            if len(sintoma) > 50:
+                print("❌ Error: El síntoma es demasiado largo. Máximo 50 caracteres.")
+                continue
+            
+            if sintoma.isdigit():
+                print("❌ Error: Los síntomas deben ser texto, no números.")
+                continue
+            
+            if not any(c.isalpha() for c in sintoma):
+                print("❌ Error: El síntoma debe contener al menos una letra.")
+                continue
+            
+            sintomas.append(sintoma.lower())
+            break
+    
+    # Realizar el diagnóstico
+    diagnostico = realizar_diagnostico(sintomas)
+    
+    print("\n" + "=" * 60)
+    print(f"Diagnóstico: {diagnostico}")
+    print("=" * 60)
+    
+    # Guardar en el historial
+    if num_id not in historial:
+        historial[num_id] = {"enfermedades": [], "tratamientos": [], "alergias": []}
+    
+    sintomas_str = ", ".join(sintomas)
+    fecha_registro = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    historial[num_id]["enfermedades"].append({
+        "sintomas": sintomas_str,
+        "nombre_enfermedad": diagnostico,
+        "fecha_registro": fecha_registro
+    })
+    
+    guardar_historial_medico(historial)
+    
+    print("\n✅ Enfermedad agregada al historial del paciente.")
+
+
+def agregar_tratamiento(num_id, historial):
+    """Menú 6: Agregar un tratamiento"""
+    print("\n" + "=" * 60)
+    print("    AGREGAR TRATAMIENTO")
+    print("=" * 60)
+    
+    medicamentos = input("\nMedicamentos (separados por comas): ").strip()
+    if not medicamentos:
+        print("❌ Debes ingresar al menos un medicamento.")
+        return
+    
+    dosis = input("Dosis de cada medicamento: ").strip()
+    if not dosis:
+        print("❌ Debes ingresar la dosis.")
+        return
+    
+    fecha_registro = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    if num_id not in historial:
+        historial[num_id] = {"enfermedades": [], "tratamientos": [], "alergias": []}
+    
+    historial[num_id]["tratamientos"].append({
+        "medicamentos": medicamentos,
+        "dosis": dosis,
+        "fecha_registro": fecha_registro
+    })
+    
+    guardar_historial_medico(historial)
+    
+    print("\n✅ Tratamiento agregado al historial del paciente.")
+
+
+def agregar_alergia(num_id, historial):
+    """Menú 7: Agregar una alergia"""
+    print("\n" + "=" * 60)
+    print("    AGREGAR ALERGIA")
+    print("=" * 60)
+    
+    alergeno = input("\nAlérgeno: ").strip()
+    if not alergeno:
+        print("❌ Debes ingresar el alérgeno.")
+        return
+    
+    sintomas = input("Síntomas: ").strip()
+    if not sintomas:
+        print("❌ Debes ingresar los síntomas.")
+        return
+    
+    fecha_registro = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    
+    if num_id not in historial:
+        historial[num_id] = {"enfermedades": [], "tratamientos": [], "alergias": []}
+    
+    historial[num_id]["alergias"].append({
+        "alergeno": alergeno,
+        "sintomas": sintomas,
+        "fecha_registro": fecha_registro
+    })
+    
+    guardar_historial_medico(historial)
+    
+    print("\n✅ Alergia agregada al historial del paciente.")
+
+
+# ==================== FUNCIÓN PRINCIPAL DE DIAGNÓSTICO (ENTREGA 1) ====================
+
+def diagnostico_sintomas():
+    """Función original de diagnóstico de síntomas (Entrega 1)"""
+    print("\n" + "=" * 60)
     print("    SISTEMA EXPERTO DE DIAGNÓSTICO MÉDICO")
     print("=" * 60)
     print()
@@ -118,7 +630,7 @@ def realizar_diagnostico(sintomas):
     elif (("dolor" in todos_sintomas or "dolores" in todos_sintomas) and
           ("garganta" in todos_sintomas or "faringe" in todos_sintomas) and
           ("tos" in todos_sintomas or "toser" in todos_sintomas) and
-          ("congestion" in todos_sintomas or "nariz" in todos_sintomas or "mocos" in todos_sintomas or "tapada" in todos_sintomas)):
+          ("congestion" in todos_sintomas or "nariz" in todos_sintomas or "mocos" in todos_sintomas or "tapada" in todos_sintomas or "congestión" in todos_sintomas)):
         return "Podría ser un resfriado común. Descansa y bebe muchos líquidos."
     
     # Sarampión: fiebre, sarpullido, ojos rojos
@@ -245,6 +757,56 @@ def realizar_diagnostico(sintomas):
     # Si no se encuentra ninguna coincidencia
     else:
         return "No puedo determinar la enfermedad. Por favor, consulta a un médico."
+
+
+# ==================== MENÚ PRINCIPAL ====================
+
+def main():
+    """Función principal con menú integrado (Entregas 1 y 2)"""
+    # Cargar datos
+    pacientes = cargar_pacientes()
+    historial = cargar_historial_medico()
+    
+    while True:
+        print("\n" + "=" * 60)
+        print("    SISTEMA DE GESTIÓN HOSPITALARIA")
+        print("    Y DIAGNÓSTICO MÉDICO")
+        print("=" * 60)
+        print("\n📋 MENÚ PRINCIPAL")
+        print("-" * 60)
+        print("1. Realizar diagnóstico médico (Entrega 1)")
+        print("2. Agregar nuevo paciente")
+        print("3. Editar información de paciente")
+        print("4. Consultar paciente y gestionar historial")
+        print("0. Salir del sistema")
+        print("-" * 60)
+        
+        opcion = input("\nSelecciona una opción: ").strip()
+        
+        if opcion == "1":
+            diagnostico_sintomas()
+        elif opcion == "2":
+            agregar_paciente(pacientes)
+        elif opcion == "3":
+            if not pacientes:
+                print("\n❌ No hay pacientes registrados en el sistema.")
+                print("   Por favor, agrega un paciente primero.")
+            else:
+                editar_paciente(pacientes)
+        elif opcion == "4":
+            if not pacientes:
+                print("\n❌ No hay pacientes registrados en el sistema.")
+                print("   Por favor, agrega un paciente primero.")
+            else:
+                consultar_paciente(pacientes, historial)
+        elif opcion == "0":
+            print("\n" + "=" * 60)
+            print("    Gracias por usar el sistema")
+            print("    ¡Hasta pronto!")
+            print("=" * 60)
+            break
+        else:
+            print("\n❌ Opción inválida. Por favor, selecciona una opción del menú.")
 
 
 if __name__ == "__main__":

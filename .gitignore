@@ -11,6 +11,10 @@ ENV/
 build/
 dist/
 
+# Archivos de datos sensibles del proyecto
+pacientes.txt
+historial_medico.txt
+
 # Windows/OS
 Thumbs.db
 Desktop.ini
