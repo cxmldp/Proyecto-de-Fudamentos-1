@@ -1,25 +1,8 @@
-﻿# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-.env
-.venv
-venv/
-ENV/
-build/
-dist/
-
-# Archivos de datos sensibles del proyecto
+﻿# Archivos de datos locales
+*.txt
 pacientes.txt
 historial_medico.txt
 
-# Windows/OS
-Thumbs.db
-Desktop.ini
-.DS_Store
-
-# IDE/Editor
-.vscode/
-.idea/
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
